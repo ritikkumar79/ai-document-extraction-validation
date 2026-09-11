@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b1220">
+  <title>DocIntel — Document Intelligence</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="/dashboard" aria-label="DocIntel dashboard">
+        <span class="brand-mark" aria-hidden="true">DI</span>
+        <span><strong>DocIntel</strong><small>Document Intelligence</small></span>
+      </a>
+      <nav class="side-nav" aria-label="Primary navigation">
+        <a class="nav-item active" href="#overview"><span class="nav-icon">⌂</span> Overview</a>
+        <a class="nav-item" href="#process"><span class="nav-icon">＋</span> Process document</a>
+        <a class="nav-item" href="#documents"><span class="nav-icon">▤</span> Documents</a>
+        <a class="nav-item" href="/docs" target="_blank" rel="noopener"><span class="nav-icon">↗</span> API documentation</a>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="service-card">
+          <span class="service-dot" id="sideHealthDot"></span>
+          <div><strong>API service</strong><small id="sideHealth">Checking status…</small></div>
+        </div>
+        <span class="version">DocIntel v1.0</span>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="mobile-header">
+        <a class="brand" href="/dashboard"><span class="brand-mark">DI</span><span><strong>DocIntel</strong><small>Document Intelligence</small></span></a>
+        <button class="icon-btn" id="menuBtn" aria-label="Open navigation">☰</button>
+      </header>
+
+      <div class="content-wrap">
+        <section class="page-header" id="overview">
+          <div>
+            <p class="eyebrow">FINANCIAL DOCUMENT PLATFORM</p>
+            <h1>Extract. Validate. <span>Understand.</span></h1>
+            <p class="lead">Turn invoices and financial statements into structured, traceable data with OCR, AI extraction and financial validation.</p>
+          </div>
+          <div class="api-status" id="health"><span class="status-dot"></span><span>Checking API…</span></div>
+        </section>
+
+        <section class="metric-grid" aria-label="Processing summary">
+          <article class="metric-card"><div class="metric-icon blue">▤</div><div><span>Total documents</span><strong id="totalDocs">—</strong></div></article>
+          <article class="metric-card"><div class="metric-icon green">✓</div><div><span>Passed</span><strong id="passedDocs">—</strong></div></article>
+          <article class="metric-card"><div class="metric-icon red">!</div><div><span>Failed</span><strong id="failedDocs">—</strong></div></article>
+          <article class="metric-card"><div class="metric-icon purple">◷</div><div><span>Latest processing</span><strong id="latestTime">—</strong></div></article>
+        </section>
+
+        <section class="card process-card" id="process">
+          <div class="card-heading">
+            <div>
+              <span class="section-kicker">NEW ANALYSIS</span>
+              <h2>Process a document</h2>
+              <p>Choose the document category, upload a supported file and start extraction.</p>
+            </div>
+            <div class="flow-badge"><span>01</span> Validate <i>→</i> <span>02</span> Extract <i>→</i> <span>03</span> Validate</div>
+          </div>
+
+          <div class="form-grid">
+            <label class="input-group">
+              <span>Document type</span>
+              <select id="documentType">
+                <option value="invoice">Invoice</option>
+                <option value="balance_sheet">Balance Sheet</option>
+                <option value="profit_and_loss">Profit &amp; Loss</option>
+                <option value="cash_flow_statement">Cash Flow Statement</option>
+              </select>
+            </label>
+
+            <div class="input-group">
+              <span>Document file</span>
+              <label class="dropzone" id="dropzone" for="file">
+                <input id="file" type="file" accept=".pdf,.jpg,.jpeg,.png" hidden>
+                <span class="upload-icon">↑</span>
+                <strong id="fileName">Drop your file here or <u>browse</u></strong>
+                <small>PDF, JPG or PNG · maximum 3 pages</small>
+              </label>
+            </div>
+          </div>
+
+          <div class="process-footer">
+            <div class="helper"><span class="lock">✓</span> Files are validated before OCR and extraction.</div>
+            <button class="primary-btn" id="processBtn" onclick="processDocument()"><span>Process document</span><b>→</b></button>
+          </div>
+          <div id="message" class="message" role="status" aria-live="polite"></div>
+        </section>
+
+        <section class="card documents-card" id="documents">
+          <div class="section-head">
+            <div><span class="section-kicker">HISTORY</span><h2>Processed documents</h2><p>Stored results available for review and API retrieval.</p></div>
+            <div class="table-actions">
+              <div class="search-box"><span>⌕</span><input id="searchInput" type="search" placeholder="Search documents…" aria-label="Search documents"></div>
+              <button class="secondary-btn" onclick="loadDocuments()">↻ <span>Refresh</span></button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Document</th><th>Type</th><th>Status</th><th>Processed</th><th>Duration</th><th></th></tr></thead>
+              <tbody id="documentsBody"></tbody>
+            </table>
+          </div>
+          <div id="tableEmpty" class="empty-state hidden"><div class="empty-icon">▤</div><h3>No processed documents</h3><p>Process your first document above and it will appear here.</p><a href="#process" class="text-link">Start processing →</a></div>
+        </section>
+
+        <footer class="footer"><span>DocIntel · AI Engineer Internship Assessment</span><a href="/docs" target="_blank" rel="noopener">Open API docs ↗</a></footer>
+      </div>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="alert"></div>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

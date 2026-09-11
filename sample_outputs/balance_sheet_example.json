@@ -1,0 +1,29 @@
+
+{
+  "document_name": "sample_balance_sheet.pdf",
+  "document_type": "balance_sheet",
+  "processing_status": "PASS",
+  "extracted_data": {
+    "statement_title": {"value": "Balance Sheet"},
+    "periods": {"value": ["2026"]},
+    "currency": {"value": "USD"},
+    "total_assets": {"value": 100000.0},
+    "total_liabilities": {"value": 60000.0},
+    "total_equity": {"value": 40000.0},
+    "line_items": []
+  },
+  "validation": {
+    "checks": [{
+      "name": "balance_sheet_equation",
+      "formula": "total_liabilities + total_equity",
+      "operands": {"total_liabilities": 60000.0, "total_equity": 40000.0},
+      "calculated_value": 100000.0,
+      "reported_value": 100000.0,
+      "variance": 0.0,
+      "tolerance": 1.0,
+      "status": "PASS"
+    }],
+    "overall_status": "PASS",
+    "issues": []
+  }
+}

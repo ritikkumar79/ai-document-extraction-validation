@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b1220">
+  <title>DocIntel — Document Result</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="/dashboard" aria-label="DocIntel dashboard">
+        <span class="brand-mark">DI</span><span><strong>DocIntel</strong><small>Document Intelligence</small></span>
+      </a>
+      <nav class="side-nav" aria-label="Primary navigation">
+        <a class="nav-item" href="/dashboard#overview"><span class="nav-icon">⌂</span> Overview</a>
+        <a class="nav-item" href="/dashboard#process"><span class="nav-icon">＋</span> Process document</a>
+        <a class="nav-item active" href="/dashboard#documents"><span class="nav-icon">▤</span> Documents</a>
+        <a class="nav-item" href="/docs" target="_blank" rel="noopener"><span class="nav-icon">↗</span> API documentation</a>
+      </nav>
+      <div class="sidebar-bottom"><div class="service-card"><span class="service-dot"></span><div><strong>API service</strong><small>Result viewer</small></div></div><span class="version">DocIntel v1.0</span></div>
+    </aside>
+
+    <main class="main-content">
+      <header class="mobile-header">
+        <a class="brand" href="/dashboard"><span class="brand-mark">DI</span><span><strong>DocIntel</strong><small>Document Intelligence</small></span></a>
+        <a class="icon-btn" href="/dashboard" aria-label="Back to dashboard">←</a>
+      </header>
+      <div class="content-wrap result-wrap" id="result">
+        <div class="loading-panel"><div class="spinner"></div><strong>Loading document result…</strong><span>Retrieving the latest stored extraction.</span></div>
+      </div>
+    </main>
+  </div>
+  <script>
+    const name = decodeURIComponent(location.pathname.split("/result/")[1] || "");
+    const resultRoot = document.getElementById("result");
+    const esc = window.escapeHtml || function(v){ return String(v ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c])); };
+    const val = x => x && typeof x === "object" && "value" in x ? x.value : x;
+    const prettyType = v => String(v || "").replaceAll("_", " ").replace(/\b\w/g, c => c.toUpperCase());
+    const statusClass = v => String(v || "").toLowerCase().replaceAll(" ", "_");
+
+    function renderField(k, v){
+      const value = val(v);
+      const missing = value === null || value === undefined || value === "";
+      const evidence = v && typeof v === "object" && v.evidence ? `<div class="evidence"><span>Evidence</span> ${esc(v.evidence.source_text)}${v.evidence.page_number ? ` <em>· page ${esc(v.evidence.page_number)}</em>` : ""}</div>` : "";
+      return `<div class="field-card ${missing ? "missing" : ""}"><div class="field-top"><span class="field-name">${esc(k.replaceAll("_", " "))}</span>${missing ? `<span class="missing-pill">Missing</span>` : ""}</div><strong>${esc(missing ? "Not available" : value)}</strong>${evidence}</div>`;
+    }
+
+    function renderResult(obj){
+      const fields = obj.extracted_data || {};
+      const items = Array.isArray(fields.line_items) ? fields.line_items : [];
+      const checks = Array.isArray(obj.validation?.checks) ? obj.validation.checks : [];
+      const processing = obj.processing_metadata || {};
+      const validationStatus = obj.validation?.overall_status || "NOT_APPLICABLE";
+      const status = obj.processing_status || "FAILED";
+      const passedChecks = checks.filter(c => String(c.status).toUpperCase() === "PASS").length;
+      const failedChecks = checks.filter(c => String(c.status).toUpperCase() === "FAIL").length;
+      const fieldRows = Object.entries(fields).filter(([k]) => k !== "line_items").map(([k,v]) => renderField(k,v)).join("");
+      const itemKeys = items.length ? Object.keys(items[0]) : [];
+      const itemHead = itemKeys.map(k => `<th>${esc(k.replaceAll("_", " "))}</th>`).join("");
+      const itemBody = items.map(item => `<tr>${itemKeys.map(k => `<td>${esc(item[k])}</td>`).join("")}</tr>`).join("");
+      const checksRows = checks.map(c => `<tr><td><strong>${esc(c.name)}</strong></td><td><code>${esc(c.formula)}</code></td><td>${esc(c.calculated_value)}</td><td>${esc(c.reported_value)}</td><td>${esc(c.variance)}</td><td><span class="status ${statusClass(c.status)}">${esc(c.status)}</span></td></tr>`).join("");
+      const confidence = obj.overall_confidence == null ? "N/A" : `${Math.round(Number(obj.overall_confidence) * 100)}%`;
+      return `
+        <div class="breadcrumb"><a href="/dashboard">Dashboard</a><span>›</span><span>Document result</span></div>
+        <section class="result-header">
+          <div><div class="result-title-row"><span class="file-type-badge">${esc(prettyType(obj.document_type))}</span><span class="status ${statusClass(status)}">${esc(status)}</span></div><h1>${esc(obj.document_name)}</h1><p>Processed ${processing.processed_at ? esc(new Date(processing.processed_at).toLocaleString()) : "recently"} · ${esc(processing.processing_time_ms ?? "—")} ms</p></div>
+          <div class="result-actions"><a class="secondary-btn" href="/dashboard#documents">← All documents</a><button class="secondary-btn" onclick="copyJson()">⧉ Copy JSON</button></div>
+        </section>
+        <section class="result-stats"><div><span>Processing</span><strong class="${statusClass(status)}">${esc(status)}</strong><small>${processing.ocr_used ? "OCR used" : "Native text"}</small></div><div><span>Validation</span><strong class="${statusClass(validationStatus)}">${esc(validationStatus)}</strong><small>${passedChecks} passed · ${failedChecks} failed</small></div><div><span>Confidence</span><strong>${esc(confidence)}</strong><small>${obj.overall_confidence == null ? "Not provided" : "Overall extraction"}</small></div><div><span>Pages</span><strong>${esc(obj.file_validation?.page_count ?? "—")}</strong><small>${esc(obj.file_validation?.file_type ?? "Unknown type")}</small></div></section>
+        <section class="card"><div class="section-head compact"><div><span class="section-kicker">EXTRACTION</span><h2>Extracted fields</h2><p>Structured key-value data with source evidence where available.</p></div></div><div class="fields-grid">${fieldRows || `<div class="empty-inline">No extracted fields were returned.</div>`}</div></section>
+        ${items.length ? `<section class="card"><div class="section-head compact"><div><span class="section-kicker">TABLE DATA</span><h2>Line items / financial table</h2><p>${items.length} structured row${items.length === 1 ? "" : "s"} extracted from the document.</p></div></div><div class="table-wrap"><table><thead><tr>${itemHead}</tr></thead><tbody>${itemBody}</tbody></table></div></section>` : ""}
+        <section class="card"><div class="section-head compact"><div><span class="section-kicker">FINANCIAL CONTROLS</span><h2>Validation &amp; calculations</h2><p>Each check reports its formula, values, variance and final status.</p></div><span class="validation-summary">${passedChecks} PASS · ${failedChecks} FAIL</span></div>${checks.length ? `<div class="table-wrap"><table><thead><tr><th>Check</th><th>Formula</th><th>Calculated</th><th>Reported</th><th>Variance</th><th>Status</th></tr></thead><tbody>${checksRows}</tbody></table></div>` : `<div class="empty-inline">No applicable financial validation checks were returned.</div>`}<div class="issues ${obj.validation?.issues?.length ? "has-issues" : ""}">${obj.validation?.issues?.length ? `<strong>Issues</strong><ul>${obj.validation.issues.map(i=>`<li>${esc(i)}</li>`).join("")}</ul>` : `<span>✓ No validation issues reported.</span>`}</div></section>
+        <section class="card"><div class="section-head compact"><div><span class="section-kicker">PROVENANCE</span><h2>Processing metadata</h2></div></div><div class="metadata-grid"><div><span>Extraction engine</span><strong>${esc(processing.extraction_engine || "—")}</strong></div><div><span>OCR</span><strong>${processing.ocr_used ? "Used" : "Not used"}</strong></div><div><span>LLM</span><strong>${processing.llm_used ? "Used" : "Fallback parser"}</strong></div><div><span>Processed at</span><strong>${processing.processed_at ? esc(new Date(processing.processed_at).toLocaleString()) : "—"}</strong></div></div></section>
+        <section class="card json-card"><div class="section-head compact"><div><span class="section-kicker">API RESPONSE</span><h2>Raw structured JSON</h2><p>Exact result returned by the backend for this document.</p></div><button class="secondary-btn" onclick="copyJson()">⧉ Copy</button></div><pre id="rawJson">${esc(JSON.stringify(obj,null,2))}</pre></section>
+        <footer class="footer"><span>DocIntel · AI Engineer Internship Assessment</span><a href="/docs" target="_blank" rel="noopener">Open API docs ↗</a></footer>`;
+    }
+
+    let currentJson = "";
+    function copyJson(){ if(!currentJson) return; navigator.clipboard?.writeText(currentJson).then(()=>{ const b=document.querySelectorAll(".secondary-btn"); b.forEach(x=>{if(x.textContent.includes("Copy")){const old=x.textContent;x.textContent="✓ Copied";setTimeout(()=>x.textContent=old,1400);}}); }); }
+    fetch("/api/v1/documents/" + encodeURIComponent(name)).then(async r=>{ const data=await r.json(); if(!r.ok) throw new Error(data.detail?.error?.message || "Document result not found."); currentJson=JSON.stringify(data,null,2); resultRoot.innerHTML=renderResult(data); }).catch(e=>{ resultRoot.innerHTML=`<div class="error-panel"><div class="error-icon">!</div><h2>Unable to load document</h2><p>${esc(e.message)}</p><a class="primary-btn" href="/dashboard">← Return to dashboard</a></div>`; });
+  </script>
+</body>
+</html>

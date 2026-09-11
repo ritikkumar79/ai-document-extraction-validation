@@ -1,0 +1,20 @@
+
+{
+  "document_name": "bad_invoice.pdf",
+  "document_type": "invoice",
+  "processing_status": "PASS",
+  "validation": {
+    "checks": [{
+      "name": "invoice_total_check",
+      "formula": "subtotal + tax_amount - discount",
+      "operands": {"subtotal": 1000.0, "tax_amount": 100.0, "discount": 0.0},
+      "calculated_value": 1100.0,
+      "reported_value": 1250.0,
+      "variance": -150.0,
+      "tolerance": 1.0,
+      "status": "FAIL"
+    }],
+    "overall_status": "FAIL",
+    "issues": ["Variance -150.0 exceeds tolerance 1.0."]
+  }
+}
