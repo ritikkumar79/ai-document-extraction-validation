@@ -33,7 +33,10 @@ app.include_router(documents_router, prefix="/api/v1")
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 FRONTEND_DIR = BASE_DIR / "frontend"
-app.mount("/static", StaticFiles(directory=FRONTEND_DIR / "static"), name="static")
+STATIC_DIR = FRONTEND_DIR / "static"
+
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 @app.get("/", include_in_schema=False)
 def root():
